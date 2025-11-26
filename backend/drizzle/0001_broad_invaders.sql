@@ -1,0 +1,1 @@
+ALTER TABLE "problems" ALTER COLUMN "difficulty" SET DATA TYPE varchar(20);

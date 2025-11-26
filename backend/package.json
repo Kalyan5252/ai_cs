@@ -4,6 +4,9 @@
   "main": "server.ts",
   "scripts": {
     "start": "nodemon --exec ts-node server.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
     "test": "test"
   },
   "author": "",

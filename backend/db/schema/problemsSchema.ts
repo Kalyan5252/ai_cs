@@ -12,7 +12,8 @@ export const problems = db.pgTable('problems', {
   id: db.uuid('id').defaultRandom().primaryKey(),
   title: db.varchar('title', { length: 255 }).notNull(),
   slug: db.varchar('slug', { length: 255 }).notNull().unique(),
-  difficulty: difficultyEnum('difficulty').notNull(), // <--- ENUM FIELD
+  // difficulty: difficultyEnum('difficulty').notNull(),
+  difficulty: db.varchar('difficulty', { length: 20 }).notNull(),
   description: db.text('description').notNull(),
   createdAt: db.timestamp('created_at').defaultNow(),
 });

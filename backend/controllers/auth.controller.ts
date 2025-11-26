@@ -14,8 +14,8 @@ function generateOtp() {
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
+    user: process.env.EMAIL_SERVER_USER,
+    pass: process.env.EMAIL_SERVER_PASSWORD,
   },
 });
 
@@ -31,7 +31,7 @@ export const sendOtpController = async (req: Request, res: Response) => {
     await db.insert(otpTable).values({ email, otpHash: hashedOtp });
 
     await transporter.sendMail({
-      from: process.env.MAIL_USER,
+      from: process.env.EMAIL_SERVER_USER,
       to: email,
       subject: 'Your OTP Code',
       text: `Your OTP is ${otp}`,
@@ -39,6 +39,7 @@ export const sendOtpController = async (req: Request, res: Response) => {
 
     return res.json({ success: true, message: 'OTP sent' });
   } catch (err) {
+    console.error(err);
     return res.status(500).json({ success: false, error: 'Server error' });
   }
 };
