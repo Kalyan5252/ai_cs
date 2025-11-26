@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "server.ts",
   "scripts": {
+    "start": "nodemon server.ts",
     "test": "test"
   },
   "author": "",
