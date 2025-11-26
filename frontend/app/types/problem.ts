@@ -11,18 +11,9 @@ export interface Problem {
   slug?: string;
   difficulty?: Difficulty;
   description: string;
-  /**
-   * Example I/O pairs shown in the problem statement.
-   */
   examples: ProblemExample[];
-  /**
-   * Human‑readable constraint lines, e.g. "2 <= nums.length <= 10^4".
-   */
   constraints: string[];
   createdAt?: string;
-  /**
-   * Optional tag names associated with the problem.
-   */
   tags?: string[];
 }
 
