@@ -7,7 +7,7 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "test": "test"
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",
@@ -29,12 +29,14 @@
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.10.1",
     "@types/pg": "^8.15.6",
     "drizzle-kit": "^0.31.7",
     "jest": "^30.2.0",
     "nodemon": "^3.1.11",
     "supertest": "^7.1.4",
+    "ts-jest": "^29.4.5",
     "tsx": "^4.20.6"
   }
 }
