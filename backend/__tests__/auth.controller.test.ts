@@ -1,4 +1,4 @@
-import { mockDb, createChain } from '../__mocks__/db';
+import { mockDb, mockQueryBuilder } from '../__mocks__/db';
 
 import {
   sendOtpController,
@@ -45,16 +45,6 @@ describe('Auth Controller', () => {
     jest.clearAllMocks();
   });
 
-  const mockQueryBuilder = (): any => ({
-    findFirst: jest.fn(),
-    findMany: jest.fn(),
-    insert: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    where: jest.fn(),
-    returning: jest.fn(),
-  });
-
   describe('sendOtpController', () => {
     it('should return 400 if email is missing', async () => {
       await sendOtpController(req as Request, res as Response);
@@ -96,71 +86,76 @@ describe('Auth Controller', () => {
     });
   });
 
-  // describe('verifyOtpController', () => {
-  //   it('should return 400 if email or OTP is missing', async () => {
-  //     await verifyOtpController(req as Request, res as Response);
-  //     expect(res.status).toHaveBeenCalledWith(400);
-  //     expect(res.json).toHaveBeenCalledWith({ success: false });
-  //   });
+  describe('verifyOtpController', () => {
+    beforeEach(() => {
+      // jest.clearAllMocks();
+      // jest.resetAllMocks();
+      db.query = {
+        otpTable: mockQueryBuilder(),
+        problems: mockQueryBuilder(),
+        users: mockQueryBuilder(),
+        testcases: mockQueryBuilder(),
+        submissions: mockQueryBuilder(),
+      };
+      req = { body: {} };
+      res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      };
+    });
 
-  //   it('should return 400 if OTP is invalid', async () => {
-  //     req.body = { email: 'test@example.com', otp: '123456' };
-  //     db.query = {
-  //       otpTable: mockQueryBuilder(),
-  //       problems: mockQueryBuilder(),
-  //       users: mockQueryBuilder(),
-  //       testcases: mockQueryBuilder(),
-  //       submissions: mockQueryBuilder(),
-  //     };
-  //     db.query.otpTable.findFirst = jest.fn().mockResolvedValue(null);
+    it('should return 400 if email or OTP is missing', async () => {
+      await verifyOtpController(req as Request, res as Response);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ success: false });
+    });
 
-  //     await verifyOtpController(req as Request, res as Response);
+    it('should return 400 if OTP is invalid', async () => {
+      req.body = { email: 'test@example.com', otp: '123456' };
 
-  //     expect(res.status).toHaveBeenCalledWith(400);
-  //     expect(res.json).toHaveBeenCalledWith({
-  //       success: false,
-  //       error: 'Invalid OTP',
-  //     });
-  //   });
+      db.query.otpTable.findFirst = jest.fn().mockResolvedValue(null);
 
-  //   it('should find or create a user in the database', async () => {
-  //     req.body = { email: 'test@example.com', otp: '123456' };
-  //     const mockHash = jest.fn().mockReturnValue('hashedOtp');
-  //     crypto.createHash = jest.fn().mockReturnValue({
-  //       update: jest.fn().mockReturnValue({ digest: mockHash }),
-  //     });
-  //     db.query = {
-  //       otpTable: mockQueryBuilder(),
-  //       problems: mockQueryBuilder(),
-  //       users: mockQueryBuilder(),
-  //       testcases: mockQueryBuilder(),
-  //       submissions: mockQueryBuilder(),
-  //     };
-  //     db.query.otpTable.findFirst = jest
-  //       .fn()
-  //       .mockResolvedValue({ otpHash: 'hashedOtp' });
-  //     db.query.users.findFirst = jest.fn().mockResolvedValue(null);
-  //     const mockInsert = jest
-  //       .fn()
-  //       .mockResolvedValue([
-  //         { email: 'test@example.com', username: 'test', password: '' },
-  //       ]);
-  //     db.insert = jest.fn().mockReturnValue({ values: mockInsert });
+      await verifyOtpController(req as Request, res as Response);
 
-  //     await verifyOtpController(req as Request, res as Response);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Invalid OTP',
+      });
+    });
 
-  //     expect(db.query.otpTable.findFirst).toHaveBeenCalled();
-  //     expect(mockInsert).toHaveBeenCalledWith({
-  //       email: 'test@example.com',
-  //       username: 'test',
-  //       password: '',
-  //     });
-  //     expect(res.json).toHaveBeenCalledWith({
-  //       success: true,
-  //       user: { email: 'test@example.com', username: 'test', password: '' },
-  //     });
-  //   });
-  // });
+    it('should find or create a user in the database', async () => {
+      const returnedUser = {
+        email: 'test@example.com',
+        username: 'test',
+        password: '',
+      };
+      req.body = { email: 'test@example.com', otp: '123456' };
+
+      db.query.otpTable.findFirst = jest
+        .fn()
+        .mockResolvedValue({ otpHash: 'mocked_hash_value' });
+      db.query.users.findFirst = jest.fn().mockResolvedValue(null);
+
+      const returningMock = jest.fn().mockResolvedValue([returnedUser]);
+
+      const valuesMock = jest.fn().mockReturnValue({
+        returning: returningMock,
+      });
+      db.insert = jest.fn().mockReturnValue({ values: valuesMock });
+
+      await verifyOtpController(req as Request, res as Response);
+
+      expect(db.query.otpTable.findFirst).toHaveBeenCalled();
+      expect(valuesMock).toHaveBeenCalledWith({
+        ...returnedUser,
+      });
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        user: { email: 'test@example.com', username: 'test', password: '' },
+      });
+    });
+  });
 });
 
 // describe('sendOtpController', () => {
