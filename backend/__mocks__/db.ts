@@ -22,3 +22,13 @@ export const mockDb = {
     }
   ),
 };
+
+export const mockQueryBuilder = (): any => ({
+  findFirst: jest.fn(() => createChain()),
+  findMany: jest.fn(() => createChain()),
+  insert: jest.fn(() => createChain()),
+  update: jest.fn(() => createChain()),
+  delete: jest.fn(() => createChain()),
+  where: jest.fn(() => createChain()),
+  returning: jest.fn(() => createChain()),
+});
