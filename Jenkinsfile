@@ -65,7 +65,7 @@ pipeline {
                             docker pull $DOCKER_IMAGE:latest &&
                             docker stop backend || true &&
                             docker rm backend || true &&
-                            docker run -d --name backend -p 4000:4000 $DOCKER_IMAGE:latest
+                            docker run -d --name backend -p 5500:5500 --env-file /root/backend.env $DOCKER_IMAGE:latest
                         "
                     """
                 }
