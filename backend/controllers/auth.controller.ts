@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { db } from '../db';
 import { users, otpTable } from '../db/schema/index';
-import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 import transporter from '../utils/mailer';
 
