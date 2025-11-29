@@ -1,15 +1,38 @@
-// import {
-//   sendOtpController,
-//   verifyOtpController,
-// } from '../controllers/auth.controller';
-// import { db } from '../db';
-// import nodemailer from 'nodemailer';
-// import crypto from 'crypto';
-// import { Request, Response } from 'express';
+import { mockDb, createChain } from '../__mocks__/db';
 
-// jest.mock('../db');
-// jest.mock('nodemailer');
-// jest.mock('crypto');
+jest.mock('../db', () => ({
+  db: mockDb,
+}));
+
+import {
+  sendOtpController,
+  verifyOtpController,
+} from '../controllers/auth.controller';
+import { db } from '../db';
+import crypto from 'crypto';
+import { Request, Response } from 'express';
+
+jest.spyOn(crypto, 'createHash').mockReturnValue({
+  update: jest.fn().mockReturnThis(),
+  digest: jest.fn().mockReturnValue('mocked_hash_value'),
+} as any);
+
+// const sendMailMock = jest.fn().mockResolvedValue({ messageId: 'test-id' });
+jest.mock('../utils/mailer', () => {
+  const sendMailMock = jest.fn().mockResolvedValue({ messageId: 'mocked' });
+
+  return {
+    __esModule: true,
+    default: {
+      // mock DEFAULT export
+      sendMail: sendMailMock,
+    },
+    __sendMailMock: sendMailMock,
+  };
+});
+
+const mailer = require('../utils/mailer');
+const sendMailMock = mailer.__sendMailMock;
 
 // describe('Auth Controller', () => {
 //   let req: Partial<Request>;
@@ -151,40 +174,18 @@
 //   //   });
 // });
 
-import { sendOtpController } from '../controllers/auth.controller';
-import nodemailer from 'nodemailer';
-import { db } from '../db';
-
-// Mock nodemailer
-jest.mock('nodemailer');
-
-const valuesMock = jest.fn().mockResolvedValue({});
-(db.insert as jest.Mock).mockReturnValue({
-  values: valuesMock,
-});
-
-const sendMailMock = jest.fn().mockResolvedValue({ messageId: 'mocked-id' });
-(nodemailer.createTransport as jest.Mock).mockReturnValue({
-  sendMail: sendMailMock,
-});
-
-// beforeEach(() => {
-//   const sendMailMock = jest.fn().mockResolvedValue({ messageId: 'mocked-id' });
-//   (nodemailer.createTransport as jest.Mock).mockReturnValue({
-//     sendMail: sendMailMock,
-//   });
-// });
-
 describe('sendOtpController', () => {
   it('should insert OTP into DB and send email', async () => {
-    // --- Mock DB (correct drizzle chain) ---
-
-    // Mock req/res
     const req: any = { body: { email: 'test@example.com' } };
     const res: any = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     };
+
+    const valuesMock = jest.fn().mockResolvedValue({});
+    (db.insert as jest.Mock).mockReturnValue({
+      values: valuesMock,
+    });
 
     await sendOtpController(req, res);
 

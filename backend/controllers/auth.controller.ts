@@ -3,21 +3,12 @@ import { db } from '../db';
 import { users, otpTable } from '../db/schema/index';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
+import transporter from '../utils/mailer';
 
 // Generate secure OTP
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
-
-// Email sender
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_SERVER_USER,
-    pass: process.env.EMAIL_SERVER_PASSWORD,
-  },
-});
 
 export const sendOtpController = async (req: Request, res: Response) => {
   try {
