@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "kalyan3436/node-backend"
-        SERVER = "ubuntu@64.227.130.185"
+        SERVER = "root@64.227.130.185"
     }
 
     stages {
