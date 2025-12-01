@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import type * as monacoEditor from 'monaco-editor';
+import Button from '../components/Button';
 
 // ---------- Types ----------
 interface Example {
@@ -127,7 +128,7 @@ function CodeTabs({ tabs, setTabs }: CodeTabsProps) {
 const CodeEditor: React.FC<CodeEditorProps> = ({
   code,
   setCode,
-  language = 'javascript',
+  language = 'python',
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<monacoEditor.editor.IStandaloneCodeEditor | null>(
@@ -281,7 +282,7 @@ export default function ProblemPage({
         <div className="flex flex-col h-full bg-[#0F1B1F] px-4 py-1 rounded-xl">
           <CodeTabs tabs={tabs} setTabs={setTabs} />
 
-          <CodeEditor code={code} setCode={setCode} language="javascript" />
+          <CodeEditor code={code} setCode={setCode} language="python" />
 
           <hr className="text-[#0c181f]" />
           <div className="flex justify-between items-center bg-[#1D2A31] rounded-b-xl px-4 py-2">
@@ -289,18 +290,8 @@ export default function ProblemPage({
               Line {code.split('\n').length}, Col 1
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={handleRun}
-                className="px-4 py-1 bg-[#1c7ed6] hover:bg-[#228be6] rounded-md text-sm"
-              >
-                Run
-              </button>
-              <button
-                onClick={handleSubmit}
-                className="px-4 py-1 bg-[#0ca678] hover:bg-[#099268] rounded-md text-sm"
-              >
-                Submit
-              </button>
+              <Button action={handleRun} type="secondary" text="Run" />
+              <Button action={handleSubmit} type="primary" text="Submit" />
             </div>
           </div>
 

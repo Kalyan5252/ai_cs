@@ -29,3 +29,54 @@ body {
   background: rgba(198, 227, 237, 0.08);
   backdrop-filter: blur(6px);
 } */
+
+.button-base {
+  color: #ffffff;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 16px;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button-primary {
+  background: linear-gradient(
+    to right,
+    #004b5e,
+    rgba(24, 129, 155, 0.834) 50%,
+    #004b5e
+  );
+  background-size: 110%;
+  background-position: left;
+}
+
+.button-primary:hover {
+  background-size: 140%;
+}
+
+.button-primary:active {
+  box-shadow: inset 0 3px 6px rgba(163, 207, 218, 0.35),
+    inset 0 -3px 4px rgba(18, 147, 180, 0.711);
+}
+
+.button-secondary {
+  background: linear-gradient(
+    -45deg,
+    rgb(134, 158, 166, 0.6),
+    rgba(77, 88, 91, 0.4) 80%
+  );
+  background-size: 140%;
+  background-position: left;
+}
+
+.button-secondary:hover {
+  background-size: 100%;
+}
+
+.button-secondary:active {
+  transform: scale(0.97);
+  box-shadow: inset 0 3px 6px rgba(163, 207, 218, 0.35),
+    inset 0 -3px 4px rgba(18, 147, 180, 0.611);
+}
