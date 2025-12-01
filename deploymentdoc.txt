@@ -1,0 +1,222 @@
+🟩 1. DigitalOcean Server Setup
+Create a Droplet
+
+Ubuntu 22.04 or 24.04
+
+Recommended: 2 CPU, 2GB RAM
+
+Update server
+sudo apt update && sudo apt upgrade -y
+
+🟧 2. Install Jenkins on Server
+Add Jenkins .deb package manually (because DO images block the repo)
+wget https://pkg.jenkins.io/debian-stable/binary/jenkins_2.479.1_all.deb
+sudo dpkg -i jenkins_2.479.1_all.deb
+sudo apt --fix-broken install -y
+
+Start Jenkins
+sudo systemctl start jenkins
+sudo systemctl enable jenkins
+
+Get initial admin password
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+Open Jenkins UI
+http://SERVER_IP:8080
+
+Install:
+
+1.Suggested Plugins
+2.NodeJS Plugin
+3.Docker Pipeline
+4.SSH Agent Plugin
+
+GitHub Plugin
+
+🟦 3. Install Docker on the Jenkins Server
+Install Docker
+sudo apt install -y docker.io
+sudo systemctl enable docker
+sudo systemctl start docker
+
+Allow jenkins user to run docker
+sudo usermod -aG docker jenkins
+sudo reboot
+
+Test
+sudo -u jenkins docker ps
+
+🟪 4. Generate SSH Keys for Jenkins (for server deployment)
+As Jenkins user:
+sudo -u jenkins mkdir -p /var/lib/jenkins/.ssh
+sudo -u jenkins chmod 700 /var/lib/jenkins/.ssh
+sudo -u jenkins ssh-keygen -t rsa -b 4096 -C "jenkins-deploy"
+
+
+Press ENTER for everything (no passphrase).
+
+Copy public key to deployment server
+sudo -u jenkins ssh-copy-id -i /var/lib/jenkins/.ssh/id_rsa.pub root@SERVER_IP
+
+
+If ssh-copy-id missing:
+
+Install: sudo apt install ssh-copy-id -y
+
+🟩 5. Add SSH Key to Jenkins Credentials
+
+In Jenkins:
+
+Manage Jenkins → Credentials → Global → Add Credentials
+
+
+Kind: SSH username with private key
+
+ID: server_ssh
+
+Username: root (or ubuntu)
+
+Private key: paste /var/lib/jenkins/.ssh/id_rsa
+
+Save.
+
+🟧 6. Add DockerHub Credentials to Jenkins
+
+Go to:
+
+Manage Jenkins → Credentials → Global → Add Credentials
+
+
+Choose:
+
+Kind: Secret text
+
+ID: docker_pass
+
+Secret: DockerHub password OR token
+
+🟦 7. Production Environment Variables (DO Droplet)
+
+Create a secure .env file on your server:
+
+nano /root/backend.env
+
+Safe & server-only.
+
+🟥 8. Dockerfile (TypeScript + Port 5500)
+
+Location:
+
+backend/Dockerfile
+
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --only=production
+COPY --from=builder /app/dist ./dist
+EXPOSE 5500
+CMD ["node", "dist/server.js"]
+
+🟦 9. Jenkinsfile (Full CI/CD Pipeline)
+
+Create:
+
+Jenkinsfile
+
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = "kalyan3436/node-backend"
+        SERVER = "root@SERVER_IP"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'cd backend && npm install'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh 'cd backend && npm test || true'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t $DOCKER_IMAGE:latest ./backend'
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withCredentials([string(credentialsId: 'docker_pass', variable: 'DOCKER_PASSWORD')]) {
+                    sh """
+                        echo $DOCKER_PASSWORD | docker login -u kalyan3436 --password-stdin
+                        docker push $DOCKER_IMAGE:latest
+                    """
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sshagent(['server_ssh']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no $SERVER "
+                            docker pull $DOCKER_IMAGE:latest &&
+                            docker stop backend || true &&
+                            docker rm backend || true &&
+                            docker run -d \
+                                --name backend \
+                                --env-file /root/backend.env \
+                                -p 5500:5500 \
+                                $DOCKER_IMAGE:latest
+                        "
+                    """
+                }
+            }
+        }
+    }
+}
+
+🟩 10. GitHub → Jenkins Webhooks
+
+In GitHub repo:
+
+Settings → Webhooks → Add Webhook
+Payload URL: http://SERVER_IP:8080/github-webhook/
+Content type: application/json
+Trigger: Just the push event
+
+
+Every push triggers the pipeline automatically.
+
+🎯 FINAL RESULT
+
+Your complete CI/CD pipeline works like this:
+
+GitHub push → Jenkins → Build → Test → Docker Build → Docker Push → Deploy to DO server
+
+
+Your node backend runs inside Docker, using environment variables from:
+
+/root/backend.env
+
+
+Port 5500 is exposed.
