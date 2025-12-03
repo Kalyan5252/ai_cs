@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import type * as monacoEditor from 'monaco-editor';
+import Button from '../components/Button';
+import CodeEditor from '../components/CodeEditor';
 
 // ---------- Types ----------
 interface Example {
@@ -29,12 +30,6 @@ interface ProblemStatementProps {
 interface CodeTabsProps {
   tabs: Tab[];
   setTabs: React.Dispatch<React.SetStateAction<Tab[]>>;
-}
-
-interface CodeEditorProps {
-  code: string;
-  setCode: React.Dispatch<React.SetStateAction<string>>;
-  language?: string;
 }
 
 interface ConsoleOutputProps {
@@ -122,90 +117,6 @@ function CodeTabs({ tabs, setTabs }: CodeTabsProps) {
 }
 
 // =============================
-// Code Editor Component (Monaco)
-// =============================
-const CodeEditor: React.FC<CodeEditorProps> = ({
-  code,
-  setCode,
-  language = 'javascript',
-}) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const editorRef = useRef<monacoEditor.editor.IStandaloneCodeEditor | null>(
-    null
-  );
-  const monacoRef = useRef<typeof monacoEditor | null>(null);
-
-  // Mount Monaco editor once
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    let disposed = false;
-
-    const load = async () => {
-      const monaco = await import('monaco-editor');
-      if (!containerRef.current || disposed) return;
-
-      monacoRef.current = monaco;
-
-      monaco.editor.defineTheme('myCoolTheme', {
-        base: 'vs-dark',
-        inherit: true,
-        rules: [
-          { token: 'comment', foreground: '888888' },
-          { token: 'keyword', foreground: 'c586c0' },
-        ],
-        colors: {
-          'editor.background': '#1D2A31',
-        },
-      });
-
-      const editor = monaco.editor.create(containerRef.current, {
-        value: code,
-        language,
-        theme: 'myCoolTheme',
-        automaticLayout: true,
-        fontSize: 15,
-        minimap: { enabled: false },
-        lineNumbers: 'on',
-        scrollBeyondLastLine: false,
-        roundedSelection: false,
-        fontFamily: 'JetBrains Mono, Menlo, monospace',
-      });
-
-      editorRef.current = editor;
-
-      editor.onDidChangeModelContent(() => {
-        setCode(editor.getValue());
-      });
-    };
-
-    load();
-
-    return () => {
-      disposed = true;
-      if (editorRef.current) {
-        editorRef.current.dispose();
-        editorRef.current = null;
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Keep external code changes in sync
-  useEffect(() => {
-    if (editorRef.current && editorRef.current.getValue() !== code) {
-      editorRef.current.setValue(code);
-    }
-  }, [code]);
-
-  return (
-    <div className="flex-1 bg-[#0F1B1F] rounded-t-xl h-full overflow-clip">
-      <div ref={containerRef} className="w-full h-full" />
-    </div>
-  );
-};
-
-// =============================
 // Console Output Component
 // =============================
 function ConsoleOutput({ consoleOut }: ConsoleOutputProps) {
@@ -252,7 +163,9 @@ export default function ProblemPage({
     { id: 2, name: 'Test.java', active: false },
   ]);
 
-  const [code, setCode] = useState<string>('def solve():\n    pass');
+  const [code, setCode] = useState<string>(
+    'def solve():\n    pass\n    # Write your code here'
+  );
   const [consoleOut, setConsoleOut] = useState<string>('');
 
   const handleRun = async () => {
@@ -281,7 +194,7 @@ export default function ProblemPage({
         <div className="flex flex-col h-full bg-[#0F1B1F] px-4 py-1 rounded-xl">
           <CodeTabs tabs={tabs} setTabs={setTabs} />
 
-          <CodeEditor code={code} setCode={setCode} language="javascript" />
+          <CodeEditor code={code} setCode={setCode} language="python" />
 
           <hr className="text-[#0c181f]" />
           <div className="flex justify-between items-center bg-[#1D2A31] rounded-b-xl px-4 py-2">
@@ -289,18 +202,8 @@ export default function ProblemPage({
               Line {code.split('\n').length}, Col 1
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={handleRun}
-                className="px-4 py-1 bg-[#1c7ed6] hover:bg-[#228be6] rounded-md text-sm"
-              >
-                Run
-              </button>
-              <button
-                onClick={handleSubmit}
-                className="px-4 py-1 bg-[#0ca678] hover:bg-[#099268] rounded-md text-sm"
-              >
-                Submit
-              </button>
+              <Button action={handleRun} type="secondary" text="Run" />
+              <Button action={handleSubmit} type="primary" text="Submit" />
             </div>
           </div>
 
