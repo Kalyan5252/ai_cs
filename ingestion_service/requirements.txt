@@ -1,0 +1,5 @@
+python-dotenv
+pinecone
+google-generativeai
+pydantic
+tqdm

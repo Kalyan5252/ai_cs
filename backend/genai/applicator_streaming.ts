@@ -52,7 +52,7 @@ function sanitizeJSON(text: string): string {
 }
 
 // ---------------------------------------------
-// 🔥 NEW STREAMING FUNCTION
+// NEW STREAMING FUNCTION
 // ---------------------------------------------
 async function streamApplicativeProblem(state: any) {
   // Build the runnable: prompt -> model
@@ -126,11 +126,11 @@ async function runPipelineStreaming(input: any) {
   };
 }
 
-// Example run
+// test run
 async function main() {
   await runPipelineStreaming({
     dsaProblem: `Given nums[] and k, return maximum subarray sum with length divisible by k.`,
-    domainPreference: 'finance',
+    domainPreference: 'gaming',
     difficulty: 'medium',
   });
 }
