@@ -1,10 +1,13 @@
+
 from pinecone import Pinecone, ServerlessSpec
 import os
 
-def init_pinecone():
-    pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+def get_pinecone_index():
+    api_key = os.getenv("PINECONE_API_KEY")
     index_name = os.getenv("PINECONE_INDEX_NAME")
-
+    if not api_key or not index_name:
+        raise ValueError("PINECONE_API_KEY and PINECONE_INDEX_NAME must be set in environment variables.")
+    pc = Pinecone(api_key=api_key)
     if index_name not in pc.list_indexes().names():
         pc.create_index(
             name=index_name,
@@ -12,6 +15,4 @@ def init_pinecone():
             metric="cosine",
             spec=ServerlessSpec(cloud="aws", region="us-east-1")
         )
-
-    index = pc.Index(index_name)
-    return index
+    return pc.Index(index_name)

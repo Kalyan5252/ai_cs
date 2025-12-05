@@ -3,22 +3,28 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from fastapi import FastAPI
 
-from pinecone_client import init_pinecone
-from chunker import chunk_markdown
-from google_embedder import GoogleEmbedder
 
+from pinecone_client import get_pinecone_index
+from chunker import chunk_markdown
+from google_embedder import get_embedder
+
+from rag_retrieval import retrieve
+from llm_service import llm_answer, build_prompt
 
 load_dotenv()
 
 app = FastAPI()
 
-index = init_pinecone()
-embedder = GoogleEmbedder()
+# index = init_pinecone()
+embedder = get_embedder()
 
 
 class IngestRequest(BaseModel):
     path: str
     text: str
+
+class Query(BaseModel):
+    query: str
 
 @app.get('/')
 def read_root():
@@ -41,14 +47,46 @@ def ingest(req: IngestRequest):
             "values": emb,
             "metadata": {
                 "path": req.path,
-                "chunk": i,
+                "chunk": i
             }
         })
 
+    # Get Pinecone index at runtime
+    index = get_pinecone_index()
     # Upsert to Pinecone
     index.upsert(vectors)
 
     return {
         "status": "ok",
         "chunks": len(chunks)
+    }
+
+# @app.post("/rag")
+# def rag_api(q: Query):
+#     contexts = retrieve(q.query)
+#     prompt = build_prompt(q.query, contexts)
+#     answer = llm_answer(prompt)
+
+#     return {
+#         "answer": answer,
+#         "contexts": contexts
+#     }
+
+@app.post("/rag")
+def rag_api(q: Query):
+    contexts = retrieve(q.query)
+    prompt = build_prompt(q.query, contexts)
+    answer = llm_answer(prompt)
+    # Serialize contexts to plain dicts
+    serialized_contexts = [
+        {
+            "id": m.id,
+            "score": getattr(m, "score", None),
+            "metadata": dict(m.metadata) if hasattr(m, "metadata") else m.get("metadata", {})
+        }
+        for m in contexts
+    ]
+    return {
+        "answer": answer,
+        "contexts": serialized_contexts
     }
