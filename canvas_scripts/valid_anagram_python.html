@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Valid Anagram – Python Code + Data Animation</title>
+
+    <style>
+      body {
+        background: #111;
+        color: #fff;
+        font-family: Arial;
+        padding: 20px;
+        display: flex;
+        gap: 30px;
+      }
+
+      .left {
+        flex: 1;
+      }
+
+      .right {
+        width: 420px;
+        background: #0d0d0d;
+        border: 2px solid #333;
+        border-radius: 10px;
+        padding: 15px;
+        font-family: Consolas, monospace;
+        font-size: 15px;
+      }
+
+      .code-line {
+        padding: 4px 6px;
+        border-radius: 5px;
+        white-space: pre;
+      }
+
+      .active {
+        background: #2a5cff;
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .char-box {
+        width: 45px;
+        height: 45px;
+        background: #333;
+        border: 2px solid #888;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 22px;
+        border-radius: 6px;
+      }
+
+      .highlight {
+        background: #ff4444;
+        border-color: #ff8888;
+      }
+
+      .map-box {
+        margin-top: 20px;
+        background: #222;
+        border: 2px solid #555;
+        border-radius: 10px;
+        padding: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- LEFT: DATA + ANIMATION -->
+    <div class="left">
+      <h2>Valid Anagram – Animated Teaching</h2>
+      <p>(Python Version)</p>
+
+      <input id="sInput" placeholder="String s" />
+      <input id="tInput" placeholder="String t" />
+      <br /><br />
+      <button id="toggleBtn">Start</button>
+
+      <div id="info"></div>
+
+      <h3>String s</h3>
+      <div class="row" id="sRow"></div>
+
+      <h3>String t</h3>
+      <div class="row" id="tRow"></div>
+
+      <div class="map-box">
+        <b>Frequency Map</b>
+        <div id="mapView"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: PYTHON CODE -->
+    <div class="right">
+      <b>Python Code</b>
+      <div class="code-line" id="p1">if len(s) != len(t):</div>
+      <div class="code-line" id="p2">return False</div>
+      <div class="code-line" id="p3">freq = {}</div>
+      <div class="code-line" id="p4">for ch in s:</div>
+      <div class="code-line" id="p5">freq[ch] = freq.get(ch, 0) + 1</div>
+      <div class="code-line" id="p6">for ch in t:</div>
+      <div class="code-line" id="p7">if freq.get(ch, 0) == 0:</div>
+      <div class="code-line" id="p8">return False</div>
+      <div class="code-line" id="p9">freq[ch] -= 1</div>
+      <div class="code-line" id="p10">return True</div>
+    </div>
+
+    <script>
+      let s = '',
+        t = '';
+      let freq = {};
+      let i = 0;
+      let phase = 'init';
+
+      let running = false;
+      let intervalId = null;
+
+      const sRow = document.getElementById('sRow');
+      const tRow = document.getElementById('tRow');
+      const mapView = document.getElementById('mapView');
+      const info = document.getElementById('info');
+
+      function highlightCode(id) {
+        document
+          .querySelectorAll('.code-line')
+          .forEach((l) => l.classList.remove('active'));
+        document.getElementById(id)?.classList.add('active');
+      }
+
+      function renderRow(row, str, idx = -1) {
+        row.innerHTML = '';
+        [...str].forEach((ch, i) => {
+          const div = document.createElement('div');
+          div.className = 'char-box';
+          if (i === idx) div.classList.add('highlight');
+          div.textContent = ch;
+          row.appendChild(div);
+        });
+      }
+
+      function renderMap() {
+        mapView.innerHTML = Object.entries(freq)
+          .map(([k, v]) => `${k} : ${v}`)
+          .join('<br>');
+      }
+
+      function step() {
+        if (phase === 'init') {
+          highlightCode('p1');
+          phase = 'build';
+          i = 0;
+          return;
+        }
+
+        if (phase === 'build') {
+          if (i >= s.length) {
+            phase = 'check';
+            i = 0;
+            highlightCode('p6');
+            info.textContent = 'Map built. Checking second string...';
+            return;
+          }
+
+          highlightCode('p5');
+          const ch = s[i];
+          freq[ch] = (freq[ch] || 0) + 1;
+
+          renderRow(sRow, s, i);
+          renderMap();
+          info.textContent = `Adding '${ch}' to map`;
+          i++;
+          return;
+        }
+
+        if (phase === 'check') {
+          if (i >= t.length) {
+            highlightCode('p10');
+            info.textContent = '✅ Valid Anagram';
+            stop();
+            return;
+          }
+
+          const ch = t[i];
+          renderRow(tRow, t, i);
+
+          if (!freq[ch]) {
+            highlightCode('p7');
+            info.textContent = `❌ '${ch}' not found`;
+            stop();
+            return;
+          }
+
+          highlightCode('p9');
+          freq[ch]--;
+          renderMap();
+          info.textContent = `Using '${ch}' from map`;
+          i++;
+        }
+      }
+
+      function stop() {
+        clearInterval(intervalId);
+        running = false;
+        document.getElementById('toggleBtn').innerText = 'Start';
+      }
+
+      document.getElementById('toggleBtn').onclick = () => {
+        running = !running;
+        if (!running) return stop();
+
+        s = sInput.value;
+        t = tInput.value;
+
+        if (s.length !== t.length || !s || !t) {
+          alert('Strings must be same length and non-empty');
+          running = false;
+          return;
+        }
+
+        freq = {};
+        i = 0;
+        phase = 'init';
+
+        renderRow(sRow, s);
+        renderRow(tRow, t);
+        renderMap();
+
+        document.getElementById('toggleBtn').innerText = 'Stop';
+        intervalId = setInterval(step, 1500);
+      };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Valid Anagram – Animated Teaching</title>
+
+    <style>
+      body {
+        background: #111;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+
+      h2 {
+        margin-bottom: 10px;
+      }
+
+      input {
+        padding: 8px;
+        font-size: 16px;
+        margin-right: 10px;
+        width: 220px;
+      }
+
+      button {
+        padding: 10px 18px;
+        font-size: 16px;
+        margin-top: 10px;
+        cursor: pointer;
+      }
+
+      .row {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      .char-box {
+        width: 50px;
+        height: 50px;
+        background: #333;
+        border: 2px solid #888;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 22px;
+        border-radius: 8px;
+        transition: 0.4s;
+      }
+
+      .highlight {
+        background: #ff4444;
+        border-color: #ff8888;
+      }
+
+      .map-box {
+        min-width: 260px;
+        background: #222;
+        border: 2px solid #555;
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 18px;
+      }
+
+      #info,
+      #complexity {
+        margin-top: 20px;
+        font-size: 18px;
+        line-height: 1.5;
+      }
+
+      #complexity {
+        color: #7ee787;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h2>Valid Anagram – Animated Teaching</h2>
+
+    <input id="sInput" placeholder="String s (e.g. anagram)" />
+    <input id="tInput" placeholder="String t (e.g. nagaram)" />
+    <br />
+    <button id="toggleBtn">Start</button>
+
+    <div id="info"></div>
+
+    <h3>String s</h3>
+    <div class="row" id="sRow"></div>
+
+    <h3>String t</h3>
+    <div class="row" id="tRow"></div>
+
+    <div class="row">
+      <div class="map-box">
+        <b>Frequency Map</b>
+        <div id="mapView"></div>
+      </div>
+    </div>
+
+    <div id="complexity"></div>
+
+    <script>
+      let s = '';
+      let t = '';
+      let freq = {};
+      let i = 0;
+      let phase = 'build'; // build or check
+
+      let running = false;
+      let intervalId = null;
+
+      const sRow = document.getElementById('sRow');
+      const tRow = document.getElementById('tRow');
+      const mapView = document.getElementById('mapView');
+      const info = document.getElementById('info');
+      const complexity = document.getElementById('complexity');
+
+      function renderRow(row, str, highlightIdx = -1) {
+        row.innerHTML = '';
+        [...str].forEach((ch, idx) => {
+          const div = document.createElement('div');
+          div.className = 'char-box';
+          if (idx === highlightIdx) div.classList.add('highlight');
+          div.textContent = ch;
+          row.appendChild(div);
+        });
+      }
+
+      function renderMap() {
+        mapView.innerHTML = Object.keys(freq)
+          .map((k) => `${k} : ${freq[k]}`)
+          .join('<br>');
+      }
+
+      function step() {
+        // Phase 1: Build frequency map from s
+        if (phase === 'build') {
+          if (i >= s.length) {
+            phase = 'check';
+            i = 0;
+            info.textContent =
+              'Finished building frequency map. Now checking string t...';
+            return;
+          }
+
+          const ch = s[i];
+          freq[ch] = (freq[ch] || 0) + 1;
+
+          renderRow(sRow, s, i);
+          renderRow(tRow, t);
+          renderMap();
+
+          info.textContent = `Adding '${ch}' to map → count = ${freq[ch]}`;
+          i++;
+        }
+
+        // Phase 2: Reduce counts using t
+        else {
+          if (i >= t.length) {
+            info.textContent = '✅ All characters matched → Valid Anagram';
+            stop();
+            return;
+          }
+
+          const ch = t[i];
+
+          renderRow(sRow, s);
+          renderRow(tRow, t, i);
+
+          if (!freq[ch]) {
+            info.textContent = `❌ '${ch}' not found or extra → Not an Anagram`;
+            stop();
+            return;
+          }
+
+          freq[ch]--;
+          renderMap();
+
+          info.textContent = `Using '${ch}' from map → remaining = ${freq[ch]}`;
+          i++;
+        }
+      }
+
+      function stop() {
+        clearInterval(intervalId);
+        running = false;
+        document.getElementById('toggleBtn').innerText = 'Start';
+      }
+
+      document.getElementById('toggleBtn').onclick = () => {
+        running = !running;
+
+        if (!running) {
+          stop();
+          return;
+        }
+
+        s = document.getElementById('sInput').value;
+        t = document.getElementById('tInput').value;
+
+        if (s.length !== t.length || !s || !t) {
+          alert('Strings must be non-empty and of equal length');
+          running = false;
+          return;
+        }
+
+        freq = {};
+        i = 0;
+        phase = 'build';
+
+        renderRow(sRow, s);
+        renderRow(tRow, t);
+        mapView.innerHTML = '';
+        info.textContent = 'Building frequency map from string s...';
+
+        complexity.innerHTML = `
+          <b>Time & Space Complexity:</b><br>
+          Time: O(n)<br>
+          Space: O(1) (only 26 lowercase letters)
+        `;
+
+        document.getElementById('toggleBtn').innerText = 'Stop';
+        intervalId = setInterval(step, 1500);
+      };
+    </script>
+  </body>
+</html>

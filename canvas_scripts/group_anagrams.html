@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Group Anagrams – Animated Teaching</title>
+
+    <style>
+      body {
+        background: #111;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+
+      input {
+        padding: 8px;
+        font-size: 16px;
+        width: 420px;
+      }
+
+      button {
+        padding: 10px 18px;
+        font-size: 16px;
+        margin-top: 10px;
+        cursor: pointer;
+      }
+
+      .row {
+        display: flex;
+        gap: 12px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+      }
+
+      .word-box {
+        padding: 10px 14px;
+        background: #333;
+        border: 2px solid #888;
+        border-radius: 8px;
+        font-size: 18px;
+        transition: 0.4s;
+      }
+
+      .highlight {
+        background: #ff4444;
+        border-color: #ff8888;
+      }
+
+      .map-box {
+        margin-top: 20px;
+        background: #222;
+        border: 2px solid #555;
+        border-radius: 10px;
+        padding: 15px;
+        font-size: 17px;
+      }
+
+      .group {
+        margin-top: 10px;
+        padding: 10px;
+        background: #1b1b1b;
+        border-radius: 8px;
+      }
+
+      #info,
+      #complexity {
+        margin-top: 20px;
+        font-size: 18px;
+        line-height: 1.5;
+      }
+
+      #complexity {
+        color: #7ee787;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h2>Group Anagrams – Animated Teaching</h2>
+
+    <input id="inputWords" placeholder="Words (e.g. eat,tea,tan,ate,nat,bat)" />
+    <br />
+    <button id="toggleBtn">Start</button>
+
+    <div id="info"></div>
+
+    <h3>Input Words</h3>
+    <div class="row" id="wordRow"></div>
+
+    <div class="map-box">
+      <b>Hash Map (Key → Group)</b>
+      <div id="mapView"></div>
+    </div>
+
+    <div id="complexity"></div>
+
+    <script>
+      let words = [];
+      let map = {};
+      let index = 0;
+
+      let running = false;
+      let intervalId = null;
+
+      const wordRow = document.getElementById('wordRow');
+      const mapView = document.getElementById('mapView');
+      const info = document.getElementById('info');
+      const complexity = document.getElementById('complexity');
+
+      function renderWords(highlightIdx = -1) {
+        wordRow.innerHTML = '';
+        words.forEach((word, idx) => {
+          const div = document.createElement('div');
+          div.className = 'word-box';
+          if (idx === highlightIdx) div.classList.add('highlight');
+          div.textContent = word;
+          wordRow.appendChild(div);
+        });
+      }
+
+      function renderMap() {
+        mapView.innerHTML = '';
+        Object.keys(map).forEach((key) => {
+          const div = document.createElement('div');
+          div.className = 'group';
+          div.innerHTML = `<b>Key: "${key}"</b> → [ ${map[key].join(', ')} ]`;
+          mapView.appendChild(div);
+        });
+      }
+
+      function step() {
+        if (index >= words.length) {
+          info.textContent = '✅ All words processed → Grouping complete';
+          stop();
+          return;
+        }
+
+        const word = words[index];
+        const key = word.split('').sort().join('');
+
+        renderWords(index);
+
+        info.innerHTML = `
+          Word: <b>${word}</b><br>
+          Generated Key (sorted): <b>${key}</b>
+        `;
+
+        if (!map[key]) {
+          map[key] = [];
+        }
+        map[key].push(word);
+
+        renderMap();
+        index++;
+      }
+
+      function stop() {
+        clearInterval(intervalId);
+        running = false;
+        document.getElementById('toggleBtn').innerText = 'Start';
+      }
+
+      document.getElementById('toggleBtn').onclick = () => {
+        running = !running;
+
+        if (!running) {
+          stop();
+          return;
+        }
+
+        words = document
+          .getElementById('inputWords')
+          .value.split(',')
+          .map((w) => w.trim())
+          .filter((w) => w.length > 0);
+
+        if (words.length === 0) {
+          alert('Please enter valid words');
+          running = false;
+          return;
+        }
+
+        map = {};
+        index = 0;
+
+        renderWords();
+        mapView.innerHTML = '';
+        info.textContent = 'Processing each word and grouping by sorted key...';
+
+        complexity.innerHTML = `
+          <b>Time & Space Complexity:</b><br>
+          Sorting each word: O(k log k)<br>
+          Total Time: O(n · k log k)<br>
+          Space: O(n · k)
+        `;
+
+        document.getElementById('toggleBtn').innerText = 'Stop';
+        intervalId = setInterval(step, 1800);
+      };
+
+      renderWords();
+    </script>
+  </body>
+</html>

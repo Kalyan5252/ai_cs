@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Two Sum Visualization - Interactive Learning</title>
+    <style>
+      :root {
+        --bg-color: #0f172a;
+        --box-bg: #1e293b;
+        --accent: #38bdf8;
+        --highlight: #f43f5e;
+        --success: #10b981;
+        --text: #f8fafc;
+      }
+
+      body {
+        background: var(--bg-color);
+        color: var(--text);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px;
+      }
+
+      .container {
+        max-width: 800px;
+        text-align: center;
+      }
+
+      h2 {
+        margin-bottom: 10px;
+        color: var(--accent);
+      }
+      p {
+        color: #94a3b8;
+        margin-bottom: 30px;
+      }
+
+      .box-container {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        perspective: 1000px;
+      }
+
+      .box {
+        width: 70px;
+        height: 70px;
+        background: var(--box-bg);
+        border: 2px solid #334155;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 28px;
+        font-weight: bold;
+        border-radius: 12px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+      }
+
+      .highlight-i {
+        border-color: var(--accent);
+        background: rgba(56, 189, 248, 0.2);
+        transform: translateY(-5px);
+      }
+      .highlight-j {
+        border-color: var(--highlight);
+        background: rgba(244, 63, 94, 0.2);
+        transform: translateY(-5px);
+      }
+      .found {
+        background: var(--success) !important;
+        border-color: #fff !important;
+        transform: scale(1.1);
+      }
+
+      .label {
+        position: absolute;
+        top: -25px;
+        font-size: 14px;
+        font-weight: normal;
+      }
+
+      #statusBox {
+        margin-top: 40px;
+        padding: 20px;
+        background: #1e293b;
+        border-radius: 8px;
+        min-width: 300px;
+        border-left: 4px solid var(--accent);
+      }
+
+      .controls {
+        margin-bottom: 30px;
+      }
+      button {
+        padding: 12px 24px;
+        font-size: 16px;
+        font-weight: 600;
+        background: var(--accent);
+        color: #000;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+      button:hover {
+        opacity: 0.9;
+      }
+      button:disabled {
+        background: #475569;
+        cursor: not-allowed;
+      }
+
+      .math-display {
+        font-family: monospace;
+        font-size: 22px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Two Sum Visualization</h2>
+      <p>
+        Target: <strong id="targetVal">9</strong> | Logic: Check if arr[i] +
+        arr[j] == target
+      </p>
+
+      <div class="controls">
+        <button id="toggleBtn">Start Visualization</button>
+        <button
+          id="resetBtn"
+          style="background: #475569; color: white; margin-left: 10px"
+        >
+          Reset
+        </button>
+      </div>
+
+      <div class="box-container" id="boxes"></div>
+
+      <div id="statusBox">
+        <div id="iterationText">Press Start to begin search...</div>
+        <div class="math-display" id="mathText"></div>
+      </div>
+    </div>
+
+    <script>
+      let nums = [2, 11, 7, 15, 4];
+      const target = 9;
+      let i = 0,
+        j = 1;
+      let running = false;
+      let intervalId = null;
+      let found = false;
+
+      const boxesDiv = document.getElementById('boxes');
+      const iterationEl = document.getElementById('iterationText');
+      const mathEl = document.getElementById('mathText');
+      const toggleBtn = document.getElementById('toggleBtn');
+
+      function renderBoxes(idxI = -1, idxJ = -1, isDone = false) {
+        boxesDiv.innerHTML = '';
+        nums.forEach((num, idx) => {
+          const div = document.createElement('div');
+          div.className = 'box';
+
+          if (isDone && (idx === idxI || idx === idxJ)) {
+            div.classList.add('found');
+          } else {
+            if (idx === idxI) {
+              div.classList.add('highlight-i');
+              div.innerHTML += `<span class="label" style="color:var(--accent)">Pointer i</span>`;
+            }
+            if (idx === idxJ) {
+              div.classList.add('highlight-j');
+              div.innerHTML += `<span class="label" style="color:var(--highlight)">Pointer j</span>`;
+            }
+          }
+
+          const span = document.createElement('span');
+          span.textContent = num;
+          div.appendChild(span);
+          boxesDiv.appendChild(div);
+        });
+      }
+
+      function step() {
+        if (found) return;
+
+        // Logic check
+        const sum = nums[i] + nums[j];
+        iterationEl.innerHTML = `Checking indices <strong>${i}</strong> and <strong>${j}</strong>`;
+        mathEl.innerHTML = `${nums[i]} + ${nums[j]} = ${sum}`;
+
+        renderBoxes(i, j);
+
+        if (sum === target) {
+          found = true;
+          iterationEl.innerHTML = `<span style="color:var(--success)">✔ Pair Found! Indices [${i}, ${j}]</span>`;
+          mathEl.innerHTML = `${nums[i]} + ${nums[j]} == ${target}`;
+          renderBoxes(i, j, true);
+          stop();
+          return;
+        }
+
+        // Pointers movement
+        j++;
+        if (j >= nums.length) {
+          i++;
+          j = i + 1;
+        }
+
+        if (i >= nums.length - 1) {
+          iterationEl.textContent = 'No pair found.';
+          stop();
+        }
+      }
+
+      function stop() {
+        running = false;
+        clearInterval(intervalId);
+        toggleBtn.innerText = 'Start Visualization';
+      }
+
+      toggleBtn.onclick = () => {
+        if (running) {
+          stop();
+        } else {
+          if (found) reset();
+          running = true;
+          toggleBtn.innerText = 'Stop';
+          intervalId = setInterval(step, 1500);
+        }
+      };
+
+      function reset() {
+        stop();
+        i = 0;
+        j = 1;
+        found = false;
+        iterationEl.textContent = 'Press Start to begin search...';
+        mathEl.textContent = '';
+        renderBoxes();
+      }
+
+      document.getElementById('resetBtn').onclick = reset;
+
+      // Initial State
+      renderBoxes();
+    </script>
+  </body>
+</html>

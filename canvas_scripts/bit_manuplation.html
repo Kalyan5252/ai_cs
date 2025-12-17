@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bit Shift Animation</title>
+    <style>
+      body {
+        margin: 0;
+        background: #fafafa;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+      canvas {
+        background: #ffffff;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      /* Added CSS to prompt user interaction */
+      .overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 30px;
+        color: #333;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 15px 30px;
+        border-radius: 10px;
+        pointer-events: none; /* Allows click to pass through to canvas */
+        font-family: Arial, sans-serif;
+        font-weight: bold;
+        opacity: 0;
+        transition: opacity 0.5s;
+      }
+      .active-overlay {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="1000" height="500"></canvas>
+    <div id="overlay" class="overlay active-overlay">Click to START/PAUSE</div>
+
+    <script>
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const overlay = document.getElementById('overlay');
+
+      // Initial state
+      let bits = [0, 0, 1, 0, 1, 1, 0, 1];
+      let originalValue = parseInt(bits.join(''), 2);
+      let step = 0; // Tracks the current visualization step (0 to bits.length)
+      let running = false;
+      let mode = 'LEFT'; // Initial shift direction
+      let interval = null;
+
+      const COLOR_MOVING = '#1d4ed8'; // blue
+      const COLOR_TARGET = '#d00000'; // red
+      const ANIMATION_DELAY = 800; // Milliseconds
+
+      // --- Drawing Functions ---
+
+      function drawLegend() {
+        ctx.font = '18px Arial';
+        ctx.fillStyle = COLOR_MOVING;
+        ctx.fillText('Blue = Moving bit', 120, 60);
+
+        ctx.fillStyle = COLOR_TARGET;
+        ctx.fillText('Red = Replacement location', 330, 60);
+
+        ctx.fillStyle = '#333';
+        ctx.fillText(
+          mode === 'LEFT' ? '⬅ LEFT SHIFT' : 'RIGHT SHIFT ➡',
+          700,
+          60
+        );
+      }
+
+      function drawBox(x, y, w, h, text) {
+        ctx.beginPath();
+        ctx.fillStyle = '#fafafa';
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 2;
+        ctx.rect(x, y, w, h);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#000';
+        ctx.font = '26px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, x + w / 2, y + h / 2);
+      }
+
+      function drawBits(pointerA = -1, pointerB = -1) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawLegend();
+
+        const startX = 120;
+        const y = 150;
+        const boxW = 80;
+        const boxH = 80;
+
+        bits.forEach((bit, i) => {
+          const x = startX + i * (boxW + 10);
+          drawBox(x, y, boxW, boxH, bit);
+
+          // Draw the moving bit pointer (A)
+          if (i === pointerA) {
+            ctx.fillStyle = COLOR_MOVING;
+            ctx.font = '34px Arial';
+            ctx.fillText('⬆', x + boxW / 2, y - 30);
+            // Highlight the bit box in moving color
+            ctx.strokeStyle = COLOR_MOVING;
+            ctx.lineWidth = 4;
+            ctx.strokeRect(x, y, boxW, boxH);
+          }
+
+          // Draw the target pointer (B)
+          if (i === pointerB) {
+            ctx.fillStyle = COLOR_TARGET;
+            ctx.font = '34px Arial';
+            ctx.fillText('⬇', x + boxW / 2, y + boxH + 40);
+          }
+        });
+
+        // Display value
+        ctx.fillStyle = '#111';
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+          `Initial Value: ${originalValue} (0b${originalValue
+            .toString(2)
+            .padStart(8, '0')})`,
+          canvas.width / 2,
+          380
+        );
+        ctx.fillText(
+          `Current Value: ${parseInt(bits.join(''), 2)} (0b${bits.join('')})`,
+          canvas.width / 2,
+          430
+        );
+      }
+
+      // --- Logic Functions ---
+
+      /**
+       * Performs a single full shift operation on the array.
+       * This function only runs *after* the visualization steps are complete.
+       */
+      function performFullShift() {
+        if (mode === 'LEFT') {
+          // MSB (index 0) is lost (dropped), LSB (end) receives 0.
+          bits.shift();
+          bits.push(0);
+          // Switch to RIGHT mode for the next sequence
+          mode = 'RIGHT';
+        } else {
+          // mode === "RIGHT"
+          // LSB (end) is lost (dropped), MSB (index 0) receives 0.
+          bits.pop();
+          bits.unshift(0);
+          // Switch to LEFT mode for the next sequence
+          mode = 'LEFT';
+        }
+      }
+
+      /**
+       * Executes a single animation frame (visual step).
+       */
+      function shiftStep() {
+        if (!running) return;
+
+        let pointerA = -1; // Moving bit (source)
+        let pointerB = -1; // Target position
+
+        if (mode === 'LEFT') {
+          // Step 0 to N-2: Visualizing the bit movement from i+1 to i
+          if (step < bits.length - 1) {
+            pointerA = step + 1;
+            pointerB = step;
+          }
+          // Step N-1: Visualizing the new 0 entering the LSB (rightmost)
+          else if (step === bits.length - 1) {
+            // Show the MSB (index 0) falling off, nothing moving into it
+            // And show the new '0' coming into the LSB (index 7)
+            pointerB = bits.length - 1;
+          }
+          // Step N: The final update
+          else {
+            performFullShift();
+            step = -1; // Next step will be 0
+          }
+        } else {
+          // mode === "RIGHT"
+          // Step 0 to N-2: Visualizing the bit movement from i to i+1 (from left to right)
+          if (step < bits.length - 1) {
+            pointerA = bits.length - 2 - step;
+            pointerB = bits.length - 1 - step;
+          }
+          // Step N-1: Visualizing the new 0 entering the MSB (leftmost)
+          else if (step === bits.length - 1) {
+            // Show the LSB (index 7) falling off
+            // And show the new '0' coming into the MSB (index 0)
+            pointerB = 0;
+          }
+          // Step N: The final update
+          else {
+            performFullShift();
+            step = -1; // Next step will be 0
+          }
+        }
+
+        drawBits(pointerA, pointerB);
+        step++;
+      }
+
+      // --- Event Listeners and Initialization ---
+
+      canvas.addEventListener('click', () => {
+        running = !running;
+        if (running) {
+          // Hide the overlay when running
+          overlay.classList.remove('active-overlay');
+          interval = setInterval(shiftStep, ANIMATION_DELAY);
+        } else {
+          // Show the overlay when paused
+          overlay.classList.add('active-overlay');
+          clearInterval(interval);
+        }
+      });
+
+      drawBits(); // Initial draw
+    </script>
+  </body>
+</html>

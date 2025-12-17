@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Best Time to Buy and Sell Stock – Histogram</title>
+
+    <style>
+      body {
+        background: #111;
+        color: #fff;
+        font-family: Arial;
+        padding: 20px;
+        display: flex;
+        gap: 30px;
+      }
+
+      .left {
+        flex: 1;
+      }
+
+      .right {
+        width: 440px;
+        background: #0d0d0d;
+        border: 2px solid #333;
+        border-radius: 10px;
+        padding: 15px;
+        font-family: Consolas, monospace;
+        font-size: 15px;
+      }
+
+      .code-line {
+        padding: 4px 6px;
+        border-radius: 5px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      .active {
+        background: #2a5cff;
+      }
+
+      input {
+        padding: 8px;
+        font-size: 16px;
+        width: 320px;
+      }
+
+      button {
+        padding: 10px 18px;
+        font-size: 16px;
+        margin-top: 10px;
+        cursor: pointer;
+      }
+
+      .row {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        align-items: flex-end;
+      }
+
+      .box {
+        width: 55px;
+        height: 55px;
+        background: #333;
+        border: 2px solid #888;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 22px;
+        border-radius: 8px;
+      }
+
+      .highlight {
+        background: #ff4444;
+        border-color: #ff8888;
+      }
+
+      .min {
+        background: #00c853;
+        border-color: #7dffb0;
+      }
+
+      /* Histogram */
+      .bar {
+        width: 55px;
+        background: #555;
+        border-radius: 6px 6px 0 0;
+        transition: 0.4s;
+        border: 2px solid transparent;
+      }
+
+      .bar-current {
+        background: #ff4444;
+      }
+      .bar-min {
+        background: #00c853;
+      }
+
+      .info,
+      .profit {
+        margin-top: 15px;
+        font-size: 18px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- LEFT -->
+    <div class="left">
+      <h2>Best Time to Buy and Sell Stock</h2>
+      <p>(Array + Histogram Visualization)</p>
+
+      <input id="pricesInput" placeholder="Prices (e.g. 7,1,5,3,6,4)" />
+      <br />
+      <button id="toggleBtn">Start</button>
+
+      <div class="info" id="info"></div>
+
+      <!-- ARRAY -->
+      <div class="row" id="priceRow"></div>
+
+      <!-- HISTOGRAM -->
+      <div class="row" id="histogram"></div>
+
+      <div class="profit" id="profitView"></div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right">
+      <b>Python Code</b>
+      <div class="code-line" id="p1">min_price = prices[0]</div>
+      <div class="code-line" id="p2">max_profit = 0</div>
+      <div class="code-line" id="p3">for price in prices:</div>
+      <div class="code-line" id="p4">if price < min_price:</div>
+      <div class="code-line" id="p5">min_price = price</div>
+      <div class="code-line" id="p6">else:</div>
+      <div class="code-line" id="p7">
+        max_profit = max(max_profit, price - min_price)
+      </div>
+      <div class="code-line" id="p8">return max_profit</div>
+    </div>
+
+    <script>
+      let prices = [];
+      let i = 0;
+      let minPrice = 0;
+      let maxProfit = 0;
+      let running = false;
+      let intervalId = null;
+
+      const priceRow = document.getElementById('priceRow');
+      const histogram = document.getElementById('histogram');
+      const info = document.getElementById('info');
+      const profitView = document.getElementById('profitView');
+
+      function highlightCode(id) {
+        document
+          .querySelectorAll('.code-line')
+          .forEach((l) => l.classList.remove('active'));
+        document.getElementById(id)?.classList.add('active');
+      }
+
+      function render(prIdx = -1, minIdx = -1) {
+        priceRow.innerHTML = '';
+        histogram.innerHTML = '';
+
+        const maxVal = Math.max(...prices);
+
+        prices.forEach((p, idx) => {
+          // Array box
+          const box = document.createElement('div');
+          box.className = 'box';
+          if (idx === prIdx) box.classList.add('highlight');
+          if (idx === minIdx) box.classList.add('min');
+          box.textContent = p;
+          priceRow.appendChild(box);
+
+          // Histogram bar
+          const bar = document.createElement('div');
+          bar.className = 'bar';
+          bar.style.height = `${(p / maxVal) * 120}px`;
+
+          if (idx === prIdx) bar.classList.add('bar-current');
+          if (idx === minIdx) bar.classList.add('bar-min');
+
+          histogram.appendChild(bar);
+        });
+      }
+
+      function step() {
+        if (i >= prices.length) {
+          highlightCode('p8');
+          info.textContent = '✅ Traversal completed';
+          stop();
+          return;
+        }
+
+        const price = prices[i];
+        highlightCode('p3');
+
+        render(i, prices.indexOf(minPrice));
+        info.textContent = `Checking price = ${price}`;
+
+        if (price < minPrice) {
+          highlightCode('p4');
+          highlightCode('p5');
+          minPrice = price;
+          info.textContent = `New minimum → Buy at ${price}`;
+        } else {
+          highlightCode('p7');
+          const profit = price - minPrice;
+          maxProfit = Math.max(maxProfit, profit);
+          info.textContent = `Sell at ${price} → Profit = ${profit}`;
+        }
+
+        profitView.textContent = `Max Profit So Far: ${maxProfit}`;
+        i++;
+      }
+
+      function stop() {
+        clearInterval(intervalId);
+        running = false;
+        document.getElementById('toggleBtn').innerText = 'Start';
+      }
+
+      document.getElementById('toggleBtn').onclick = () => {
+        running = !running;
+        if (!running) return stop();
+
+        prices = pricesInput.value
+          .split(',')
+          .map(Number)
+          .filter((n) => !isNaN(n));
+
+        if (prices.length < 2) {
+          alert('Enter at least two prices');
+          running = false;
+          return;
+        }
+
+        i = 0;
+        minPrice = prices[0];
+        maxProfit = 0;
+
+        render();
+        highlightCode('p1');
+        highlightCode('p2');
+
+        info.textContent = 'Starting traversal...';
+        profitView.textContent = 'Max Profit So Far: 0';
+
+        document.getElementById('toggleBtn').innerText = 'Stop';
+        intervalId = setInterval(step, 1500);
+      };
+    </script>
+  </body>
+</html>
