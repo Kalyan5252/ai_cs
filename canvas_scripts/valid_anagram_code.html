@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Valid Anagram – Animated Teaching</title>
+
+    <style>
+      body {
+        background: #111;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        display: flex;
+        gap: 30px;
+      }
+
+      /* LEFT SIDE */
+      .left {
+        flex: 1;
+      }
+
+      /* RIGHT SIDE (CODE PANEL) */
+      .right {
+        width: 420px;
+        background: #0d0d0d;
+        border: 2px solid #333;
+        border-radius: 10px;
+        padding: 15px;
+        font-family: Consolas, monospace;
+        font-size: 15px;
+      }
+
+      .code-line {
+        padding: 4px 6px;
+        border-radius: 5px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere; /* break even without spaces */
+        word-break: break-word;
+      }
+
+      .active {
+        background: #2a5cff;
+      }
+
+      h2 {
+        margin-bottom: 10px;
+      }
+
+      input {
+        padding: 8px;
+        font-size: 16px;
+        margin-right: 10px;
+        width: 220px;
+      }
+
+      button {
+        padding: 10px 18px;
+        font-size: 16px;
+        margin-top: 10px;
+        cursor: pointer;
+      }
+
+      .row {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      .char-box {
+        width: 50px;
+        height: 50px;
+        background: #333;
+        border: 2px solid #888;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 22px;
+        border-radius: 8px;
+      }
+
+      .highlight {
+        background: #ff4444;
+        border-color: #ff8888;
+      }
+
+      .map-box {
+        min-width: 260px;
+        background: #222;
+        border: 2px solid #555;
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 18px;
+        margin-top: 20px;
+      }
+
+      #info,
+      #complexity {
+        margin-top: 20px;
+        font-size: 18px;
+      }
+
+      #complexity {
+        color: #7ee787;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- LEFT SIDE -->
+    <div class="left">
+      <h2>Valid Anagram – Animated Teaching</h2>
+
+      <input id="sInput" placeholder="String s (e.g. anagram)" />
+      <input id="tInput" placeholder="String t (e.g. nagaram)" />
+      <br />
+      <button id="toggleBtn">Start</button>
+
+      <div id="info"></div>
+
+      <h3>String s</h3>
+      <div class="row" id="sRow"></div>
+
+      <h3>String t</h3>
+      <div class="row" id="tRow"></div>
+
+      <div class="map-box">
+        <b>Frequency Map</b>
+        <div id="mapView"></div>
+      </div>
+
+      <div id="complexity"></div>
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="right">
+      <b>Algorithm (Hash Map)</b>
+      <div id="code">
+        <div class="code-line" id="l1">
+          if (s.length !== t.length) return false;
+        </div>
+        <div class="code-line" id="l2">const freq = {};</div>
+        <div class="code-line" id="l3">for (char of s) {</div>
+        <div class="code-line" id="l4">freq[char]++;</div>
+        <div class="code-line" id="l5">}</div>
+        <div class="code-line" id="l6">for (char of t) {</div>
+        <div class="code-line" id="l7">if (!freq[char]) return false;</div>
+        <div class="code-line" id="l8">freq[char]--;</div>
+        <div class="code-line" id="l9">}</div>
+        <div class="code-line" id="l10">return true;</div>
+      </div>
+    </div>
+
+    <script>
+      let s = '';
+      let t = '';
+      let freq = {};
+      let i = 0;
+      let phase = 'build';
+
+      let running = false;
+      let intervalId = null;
+
+      const sRow = document.getElementById('sRow');
+      const tRow = document.getElementById('tRow');
+      const mapView = document.getElementById('mapView');
+      const info = document.getElementById('info');
+
+      function highlightCode(id) {
+        document
+          .querySelectorAll('.code-line')
+          .forEach((line) => line.classList.remove('active'));
+        if (id) document.getElementById(id).classList.add('active');
+      }
+
+      function renderRow(row, str, idx = -1) {
+        row.innerHTML = '';
+        [...str].forEach((ch, i) => {
+          const div = document.createElement('div');
+          div.className = 'char-box';
+          if (i === idx) div.classList.add('highlight');
+          div.textContent = ch;
+          row.appendChild(div);
+        });
+      }
+
+      function renderMap() {
+        mapView.innerHTML = Object.keys(freq)
+          .map((k) => `${k} : ${freq[k]}`)
+          .join('<br>');
+      }
+
+      function step() {
+        if (phase === 'build') {
+          highlightCode('l3');
+
+          if (i >= s.length) {
+            phase = 'check';
+            i = 0;
+            highlightCode('l6');
+            info.textContent =
+              'Frequency map built. Now validating string t...';
+            return;
+          }
+
+          const ch = s[i];
+          highlightCode('l4');
+          freq[ch] = (freq[ch] || 0) + 1;
+
+          renderRow(sRow, s, i);
+          renderRow(tRow, t);
+          renderMap();
+
+          info.textContent = `Adding '${ch}' → count = ${freq[ch]}`;
+          i++;
+        } else {
+          highlightCode('l6');
+
+          if (i >= t.length) {
+            highlightCode('l10');
+            info.textContent = '✅ Valid Anagram';
+            stop();
+            return;
+          }
+
+          const ch = t[i];
+          renderRow(sRow, s);
+          renderRow(tRow, t, i);
+
+          if (!freq[ch]) {
+            highlightCode('l7');
+            info.textContent = `❌ '${ch}' not found → Not Anagram`;
+            stop();
+            return;
+          }
+
+          highlightCode('l8');
+          freq[ch]--;
+          renderMap();
+
+          info.textContent = `Using '${ch}' → remaining ${freq[ch]}`;
+          i++;
+        }
+      }
+
+      function stop() {
+        clearInterval(intervalId);
+        running = false;
+        document.getElementById('toggleBtn').innerText = 'Start';
+      }
+
+      document.getElementById('toggleBtn').onclick = () => {
+        running = !running;
+        if (!running) return stop();
+
+        s = sInput.value;
+        t = tInput.value;
+
+        if (s.length !== t.length || !s || !t) {
+          alert('Strings must be non-empty and same length');
+          running = false;
+          return;
+        }
+
+        freq = {};
+        i = 0;
+        phase = 'build';
+
+        renderRow(sRow, s);
+        renderRow(tRow, t);
+        renderMap();
+        highlightCode('l1');
+
+        info.textContent = 'Starting Valid Anagram check...';
+
+        complexity.innerHTML = `
+          <b>Time & Space Complexity:</b><br>
+          Time: O(n)<br>
+          Space: O(1)
+        `;
+
+        document.getElementById('toggleBtn').innerText = 'Stop';
+        intervalId = setInterval(step, 1500);
+      };
+    </script>
+  </body>
+</html>

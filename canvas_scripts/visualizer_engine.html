@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Algorithm Visualizer Engine – Stock</title>
+
+    <style>
+      body {
+        background: #111;
+        color: #fff;
+        font-family: Arial;
+        padding: 20px;
+        display: flex;
+        gap: 30px;
+      }
+
+      .left {
+        flex: 1;
+      }
+      .right {
+        width: 440px;
+        background: #0d0d0d;
+        border: 2px solid #333;
+        border-radius: 10px;
+        padding: 15px;
+        font-family: Consolas, monospace;
+        font-size: 15px;
+      }
+
+      .code-line {
+        padding: 4px 6px;
+        border-radius: 5px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .active {
+        background: #2a5cff;
+      }
+
+      input {
+        padding: 8px;
+        font-size: 16px;
+        width: 320px;
+      }
+      button {
+        padding: 8px 14px;
+        font-size: 15px;
+        cursor: pointer;
+      }
+
+      .controls {
+        margin-top: 10px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .row {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        align-items: flex-end;
+      }
+
+      .box {
+        width: 55px;
+        height: 55px;
+        background: #333;
+        border: 2px solid #888;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 22px;
+        border-radius: 8px;
+      }
+
+      .highlight {
+        background: #ff4444;
+        border-color: #ff8888;
+      }
+      .min {
+        background: #00c853;
+        border-color: #7dffb0;
+      }
+
+      .bar {
+        width: 55px;
+        background: #555;
+        border-radius: 6px 6px 0 0;
+        border: 2px solid transparent;
+      }
+
+      .bar-current {
+        background: #ff4444;
+      }
+      .bar-min {
+        background: #00c853;
+      }
+
+      .info,
+      .profit {
+        margin-top: 15px;
+        font-size: 18px;
+      }
+      .speed {
+        font-size: 14px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- LEFT -->
+    <div class="left">
+      <h2>Stock – Engine Refactor Demo</h2>
+
+      <input id="inputData" placeholder="Prices (e.g. 7,1,5,3,6,4)" />
+
+      <div class="controls">
+        <button id="playPause">▶ Play</button>
+        <button id="prev">⏮ Prev</button>
+        <button id="next">⏭ Next</button>
+        <button id="resetBtn">⟲ Reset</button>
+
+        <label class="speed">
+          Speed
+          <input
+            type="range"
+            id="speedSlider"
+            min="0.5"
+            max="3"
+            step="0.5"
+            value="1"
+          />
+          <span id="speedVal">1×</span>
+        </label>
+      </div>
+
+      <div class="info" id="info"></div>
+
+      <div class="row" id="array"></div>
+      <div class="row" id="histogram"></div>
+
+      <div class="profit" id="result"></div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right" id="codePanel"></div>
+
+    <script>
+      /* =========================================================
+   🔧 VISUALIZER ENGINE (REUSABLE)
+========================================================= */
+
+      function createVisualizer({
+        parseInput,
+        computeStates,
+        renderState,
+        codeLines,
+      }) {
+        let states = [];
+        let index = 0;
+        let playing = false;
+        let intervalId = null;
+        let speed = 1;
+        const baseDelay = 1500;
+
+        // Inject code panel
+        const codePanel = document.getElementById('codePanel');
+        codePanel.innerHTML =
+          '<b>Python Code</b>' +
+          codeLines
+            .map((l, i) => `<div class="code-line" id="c${i}">${l}</div>`)
+            .join('');
+
+        function highlight(codeIdx) {
+          document
+            .querySelectorAll('.code-line')
+            .forEach((l) => l.classList.remove('active'));
+          document.getElementById(`c${codeIdx}`)?.classList.add('active');
+        }
+
+        function render() {
+          const state = states[index];
+          renderState(state);
+          highlight(state.code);
+        }
+
+        function play() {
+          intervalId = setInterval(() => {
+            if (index >= states.length - 1) return pause();
+            index++;
+            render();
+          }, baseDelay / speed);
+          playing = true;
+          playPause.textContent = '⏸ Pause';
+        }
+
+        function pause() {
+          clearInterval(intervalId);
+          playing = false;
+          playPause.textContent = '▶ Resume';
+        }
+
+        function reset() {
+          pause();
+          index = 0;
+          render();
+          playPause.textContent = '▶ Play';
+        }
+
+        // Controls
+        playPause.onclick = () => {
+          if (!states.length) {
+            const input = parseInput(inputData.value);
+            states = computeStates(input);
+            index = 0;
+            render();
+          }
+          playing ? pause() : play();
+        };
+
+        next.onclick = () => {
+          pause();
+          if (index < states.length - 1) {
+            index++;
+            render();
+          }
+        };
+
+        prev.onclick = () => {
+          pause();
+          if (index > 0) {
+            index--;
+            render();
+          }
+        };
+
+        resetBtn.onclick = reset;
+
+        speedSlider.oninput = (e) => {
+          speed = Number(speedSlider.value);
+          speedVal.textContent = speed + '×';
+          if (playing) {
+            pause();
+            play();
+          }
+        };
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sets Diagram</title>
+    <style>
+      body {
+        margin: 0;
+        background: #fafafa;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+      canvas {
+        background: #ffffff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="800" height="600"></canvas>
+
+    <script>
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+
+      // Universe 1..20
+      const numbers = Array.from({ length: 20 }, (_, i) => i + 1);
+      const isPrime = (n) => {
+        if (n < 2) return false;
+        for (let i = 2; i * i <= n; i++) if (n % i === 0) return false;
+        return true;
+      };
+      const evens = new Set(numbers.filter((x) => x % 2 === 0));
+      const primes = new Set(numbers.filter(isPrime));
+      const intersection = new Set([...evens].filter((x) => primes.has(x)));
+
+      // Shapes
+      const U = { x: 80, y: 60, w: 640, h: 480 };
+      const A = { x: 320, y: 300, r: 150 }; // evens
+      const B = { x: 480, y: 300, r: 150 }; // primes
+
+      // Layout positions
+      const pos = {};
+      function layout() {
+        const inter = [...intersection];
+        const aOnly = [...evens].filter((x) => !intersection.has(x));
+        const bOnly = [...primes].filter((x) => !intersection.has(x));
+        const neither = numbers.filter((n) => !evens.has(n) && !primes.has(n));
+
+        inter.forEach((n, idx) => {
+          pos[n] = {
+            x: (A.x + B.x) / 2 + idx * 20,
+            y: A.y + (idx % 2 ? 30 : -20),
+          };
+        });
+
+        aOnly.forEach((n, idx) => {
+          pos[n] = { x: A.x - 60 + idx * 18, y: A.y + (idx % 2 ? 40 : -40) };
+        });
+
+        bOnly.forEach((n, idx) => {
+          pos[n] = { x: B.x + 60 - idx * 18, y: B.y + (idx % 2 ? 40 : -40) };
+        });
+
+        neither.forEach((n, idx) => {
+          pos[n] = { x: U.x + 40 + idx * 25, y: U.y + 40 + idx * 20 };
+        });
+      }
+
+      layout();
+
+      function drawUniverse() {
+        ctx.save();
+        ctx.strokeStyle = '#444';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(U.x, U.y, U.w, U.h);
+        ctx.font = '18px Arial';
+        ctx.fillStyle = '#333';
+        ctx.fillText('Universe (1–20)', U.x + 10, U.y + 25);
+        ctx.restore();
+      }
+
+      function drawCircles() {
+        // Even set (A)
+        ctx.beginPath();
+        ctx.arc(A.x, A.y, A.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,150,255,0.15)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,150,255,0.8)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#0077cc';
+        ctx.font = '18px Arial';
+        ctx.fillText('Even (A)', A.x - 40, A.y - A.r - 10);
+
+        // Prime set (B)
+        ctx.beginPath();
+        ctx.arc(B.x, B.y, B.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,100,0,0.15)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,100,0,0.8)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#cc5500';
+        ctx.font = '18px Arial';
+        ctx.fillText('Prime (B)', B.x - 40, B.y - B.r - 10);
+      }
+
+      function drawNumbers() {
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#222';
+        numbers.forEach((n) => {
+          let color = '#222';
+          if (evens.has(n)) color = '#0077cc';
+          if (primes.has(n)) color = '#cc5500';
+          if (intersection.has(n)) color = '#d40000';
+
+          const p = pos[n];
+          ctx.fillStyle = color;
+          ctx.fillText(n, p.x, p.y);
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawUniverse();
+        drawCircles();
+        drawNumbers();
+      }
+
+      draw();
+    </script>
+  </body>
+</html>

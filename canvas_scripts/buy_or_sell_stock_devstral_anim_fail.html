@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Stock Profit Maximizer</title>
+    <style>
+      body {
+        background: #111;
+        color: #fff;
+        font-family: Arial;
+        padding: 20px;
+        display: flex;
+        gap: 30px;
+      }
+      .left {
+        flex: 1;
+      }
+      .right {
+        width: 420px;
+        background: #0d0d0d;
+        border: 2px solid #333;
+        border-radius: 10px;
+        padding: 15px;
+        font-family: Consolas, monospace;
+        font-size: 15px;
+      }
+      .code-line {
+        padding: 4px 6px;
+        border-radius: 5px;
+        white-space: pre;
+      }
+      .active {
+        background: #2a5cff;
+      }
+      .chart {
+        height: 300px;
+        border: 2px solid #333;
+        border-radius: 10px;
+        position: relative;
+        margin-top: 20px;
+      }
+      .price-point {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #333;
+        border: 2px solid #888;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .highlight {
+        background: #ff4444;
+        border-color: #ff8888;
+      }
+      .buy {
+        background: #00ff88;
+        border-color: #00ff88;
+      }
+      .sell {
+        background: #ff4444;
+        border-color: #ff4444;
+      }
+      .info-box {
+        background: #222;
+        border: 2px solid #555;
+        border-radius: 10px;
+        padding: 10px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="left">
+      <h2>Stock Profit Maximizer</h2>
+      <p>Interactive visualization of the optimal buy/sell strategy</p>
+
+      <input id="pricesInput" placeholder="Enter prices (comma separated)" />
+      <button id="runBtn">Run Algorithm</button>
+
+      <div class="info-box">
+        <b>Current State:</b> <span id="stateInfo">Ready</span>
+        <br />
+        <b>Max Profit:</b> <span id="profitInfo">$0</span>
+      </div>
+
+      <div class="chart" id="chart"></div>
+    </div>
+
+    <div class="right">
+      <b>JavaScript Code</b>
+      <div class="code-line" id="l1">let minPrice = prices[0];</div>
+      <div class="code-line" id="l2">let maxProfit = 0;</div>
+      <div class="code-line" id="l3">
+        for (let i = 1; i < prices.length; i++) {
+      </div>
+      <div class="code-line" id="l4">if (prices[i] < minPrice) {</div>
+      <div class="code-line" id="l5">minPrice = prices[i];</div>
+      <div class="code-line" id="l6">
+        } else if (prices[i] - minPrice > maxProfit) {
+      </div>
+      <div class="code-line" id="l7">maxProfit = prices[i] - minPrice;</div>
+      <div class="code-line" id="l8">}</div>
+      <div class="code-line" id="l9">}</div>
+      <div class="code-line" id="l10">return maxProfit;</div>
+    </div>
+
+    <script>
+      let prices = [];
+      let currentIndex = 0;
+      let minPrice = 0;
+      let maxProfit = 0;
+      let buyIndex = 0;
+      let sellIndex = 0;
+      let running = false;
+      let intervalId = null;
+
+      const chart = document.getElementById('chart');
+      const stateInfo = document.getElementById('stateInfo');
+      const profitInfo = document.getElementById('profitInfo');
+
+      function highlightCode(id) {
+        document
+          .querySelectorAll('.code-line')
+          .forEach((l) => l.classList.remove('active'));
+        document.getElementById(id)?.classList.add('active');
+      }
+
+      function renderChart() {
+        chart.innerHTML = '';
+        const width = chart.clientWidth;
+        const height = chart.clientHeight;
+        const pointWidth = width / (prices.length - 1);
+
+        for (let i = 0; i < prices.length; i++) {
+          const point = document.createElement('div');
+          point.className = 'price-point';
+          point.textContent = prices[i];
+          point.style.left = `${i * pointWidth}px`;
+          point.style.top = `${
+            height - (prices[i] / Math.max(...prices)) * height
+          }px`;
+
+          if (i === currentIndex) {
+            point.classList.add('highlight');
+          }
+          if (i === buyIndex) {
+            point.classList.add('buy');
+          }
+          if (i === sellIndex) {
+            point.classList.add('sell');
+          }
+
+          point.onclick = () => {
+            if (!running) {
+              prices = prices.map((p, idx) => (idx === i ? p + 1 : p));
+              renderChart();
+            }
+          };
+
+          chart.appendChild(point);
+        }
+      }
+
+      function step() {
+        if (currentIndex === 0) {
+          highlightCode('l1');
+          minPrice = prices[0];
+          stateInfo.textContent = `Initializing with minPrice = $${minPrice}`;
+          currentIndex++;
+          return;
+        }
+
+        if (currentIndex === 1) {
+          highlightCode('l2');
+          maxProfit = 0;
+          stateInfo.textContent = `Initializing maxProfit = $${maxProfit}`;
+          currentIndex++;
+          return;
+        }
+
+        if (currentIndex < prices.length) {
+          highlightCode('l3');
+          highlightCode('l4');
+          if (prices[currentIndex] < minPrice) {
+            highlightCode('l5');
+            minPrice = prices[currentIndex];
+            buyIndex = currentIndex;
+            stateInfo.textContent = `New minPrice = $${minPrice} at day ${currentIndex}`;
+          } else {
+            highlightCode('l6');
+            const potentialProfit = prices[currentIndex] - minPrice;
+            if (potentialProfit > maxProfit) {
+              highlightCode('l7');
+              maxProfit = potentialProfit;
+              sellIndex = currentIndex;
+              stateInfo.textContent = `New maxProfit = $${maxProfit} (buy at ${buyIndex}, 
+sell at ${currentIndex})`;
+            }
+          }
+          profitInfo.textContent = `$${maxProfit}`;
+          currentIndex++;
+        } else {
+          highlightCode('l10');
+          stateInfo.textContent = `Algorithm complete! Max profit: $${maxProfit}`;
+          stop();
+        }
+
+        renderChart();
+      }
+
+      function stop() {
+        clearInterval(intervalId);
+        running = false;
+        document.getElementById('runBtn').innerText = 'Run Algorithm';
+      }
+
+      document.getElementById('runBtn').onclick = () => {
+        const input = document.getElementById('pricesInput').value;
+        prices = input.split(',').map(Number);
+
+        if (prices.some(isNaN) || prices.length < 2) {
+          alert('Please enter at least 2 valid numbers');
+          return;
+        }
+
+        running = !running;
+        if (!running) return stop();
+
+        currentIndex = 0;
+        minPrice = 0;
+        maxProfit = 0;
+        buyIndex = 0;
+        sellIndex = 0;
+
+        document.getElementById('runBtn').innerText = 'Stop';
+        intervalId = setInterval(step, 1500);
+        renderChart();
+      };
+    </script>
+  </body>
+</html>
